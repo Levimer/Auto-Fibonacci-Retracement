@@ -1,0 +1,976 @@
+//@version=5
+indicator("Auto. Fibonacci Retracement", overlay=true)
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////// USER INPUTS
+// User input for loopback depth
+lookback = input(500, title="Lookback Depth", group="Lookback Settings")
+
+
+// User input for Ascending Trendline properties
+enableAscendingTrendline = input.bool(false, title="", group="Ascending Trendline Settings", inline="Ascending")
+ascendingTrendlineColor = input.color(color.white, title="", group="Ascending Trendline Settings", inline="Ascending")
+setAscendingTrendlineWidth = input.string("‒‒‒‒‒‒‒", "", ["⸺⸺", "‒‒‒‒‒‒‒", "━━━━", "▬▬▬▬"], group="Ascending Trendline Settings", inline="Ascending")
+ascendingTrendlineWidth = setAscendingTrendlineWidth == "⸺⸺" ? 1 : setAscendingTrendlineWidth == "‒‒‒‒‒‒‒" ? 2 : setAscendingTrendlineWidth == "━━━━" ? 3 : 4
+setAscendingTrendlineStyle = input.string("· · · · · · ·", "", ["──────", "- - - - - - -", "· · · · · · ·"], group="Ascending Trendline Settings", inline="Ascending")
+ascendingTrendlineStyle = setAscendingTrendlineStyle == "──────" ? line.style_solid : setAscendingTrendlineStyle == "- - - - - - -" ? line.style_dashed : line.style_dotted
+
+// User input for Descending Trendline properties
+enableDescendingTrendline = input.bool(false, title="", group="Descending Trendline Settings", inline="Descending")
+descendingTrendlineColor = input.color(color.white, title="", group="Descending Trendline Settings", inline="Descending")
+setDescendiongTrendlineWidth = input.string("‒‒‒‒‒‒‒", "", ["⸺⸺", "‒‒‒‒‒‒‒", "━━━━", "▬▬▬▬"], group="Descending Trendline Settings", inline="Descending")
+descendingTrendlineWidth = setDescendiongTrendlineWidth == "⸺⸺" ? 1 : setDescendiongTrendlineWidth == "‒‒‒‒‒‒‒" ? 2 : setDescendiongTrendlineWidth == "━━━━" ? 3 : 4
+setDescendingTrendlineStyle = input.string("· · · · · · ·", "", ["──────", "- - - - - - -", "· · · · · · ·"], group="Descending Trendline Settings", inline="Descending")
+descendingTrendlineStyle = setDescendingTrendlineStyle == "──────" ? line.style_solid : setDescendingTrendlineStyle == "- - - - - - -" ? line.style_dashed : line.style_dotted
+
+
+// User inputs for MAX properties
+enableMax = input.bool(true, title="", group="Min/Max Settings", inline="Max")
+maxLabelText = input.string(defval="Max", title="", group="Min/Max Settings", inline="Max")
+maxLabelColor = input(color.red, title="", group="Min/Max Settings", inline="Max")
+maxLabelTextColor = input(color.white, title="", group="Min/Max Settings", inline="Max")
+
+// User inputs for MIN properties
+enableMin = input.bool(true, title="", group="Min/Max Settings", inline="Min")
+minLabelText = input.string(defval="Min", title="", group="Min/Max Settings", inline="Min")
+minLabelColor = input(color.blue, title="", group="Min/Max Settings", inline="Min")
+minLabelTextColor = input(color.white, title="", group="Min/Max Settings", inline="Min")
+
+
+// User inputs for the 2.000% Fibonacci level line properties
+enableTwoZeroZeroZeroLine = input.bool(false, title="", inline="2.000%", group="Fibonacci Settings")
+setTwoZeroZeroZeroLineLevel = input.float(defval=2.000, title="", inline="2.000%", group="Fibonacci Settings")
+twoZeroZeroZeroLineColor = input.color(color.navy, title="", inline="2.000%", group="Fibonacci Settings")
+setTwoZeroZeroZeroLineWidth = input.string("‒‒‒‒‒‒‒", "", ["⸺⸺", "‒‒‒‒‒‒‒", "━━━━", "▬▬▬▬"], group="Fibonacci Settings", inline="2.000%")
+twoZeroZeroZeroLineWidth = setTwoZeroZeroZeroLineWidth == "⸺⸺" ? 1 : setTwoZeroZeroZeroLineWidth == "‒‒‒‒‒‒‒" ? 2 : setTwoZeroZeroZeroLineWidth == "━━━━" ? 3 : 4
+setTwoZeroZeroZeroLineStyle = input.string("──────", "", ["──────", "- - - - - - -", "· · · · · · ·"], group="Fibonacci Settings", inline="2.000%")
+twoZeroZeroZeroLineStyle = setTwoZeroZeroZeroLineStyle == "──────" ? line.style_solid : setTwoZeroZeroZeroLineStyle == "- - - - - - -" ? line.style_dashed : line.style_dotted
+
+// User inputs for the 1.786% Fibonacci level line properties
+enableOneSevenEightSixLine = input.bool(false, title="", inline="1.786%", group="Fibonacci Settings")
+setOneSevenEightSixLineLevel = input.float(defval=1.786, title="", inline="1.786%", group="Fibonacci Settings")
+oneSevenEightSixLineColor = input.color(color.purple, title="", inline="1.786%", group="Fibonacci Settings")
+setOneSevenEightSixLineWidth = input.string("‒‒‒‒‒‒‒", "", ["⸺⸺", "‒‒‒‒‒‒‒", "━━━━", "▬▬▬▬"], group="Fibonacci Settings", inline="1.786%")
+oneSevenEightSixLineWidth = setOneSevenEightSixLineWidth == "⸺⸺" ? 1 : setOneSevenEightSixLineWidth == "‒‒‒‒‒‒‒" ? 2 : setOneSevenEightSixLineWidth == "━━━━" ? 3 : 4
+setOneSevenEightSixLineStyle = input.string("──────", "", ["──────", "- - - - - - -", "· · · · · · ·"], group="Fibonacci Settings", inline="1.786%")
+oneSevenEightSixLineStyle = setOneSevenEightSixLineStyle == "──────" ? line.style_solid : setOneSevenEightSixLineStyle == "- - - - - - -" ? line.style_dashed : line.style_dotted
+
+// User inputs for the 1.650% Fibonacci level line properties
+enableOneSixFiveZeroLine = input.bool(false, title="", inline="1.650%", group="Fibonacci Settings")
+setOneSixFiveZeroLineLevel = input.float(defval=1.650, title="", inline="1.650%", group="Fibonacci Settings")
+oneSixFiveZeroLineColor = input.color(color.orange, title="", inline="1.650%", group="Fibonacci Settings")
+setOneSixFiveZeroLineWidth = input.string("‒‒‒‒‒‒‒", "", ["⸺⸺", "‒‒‒‒‒‒‒", "━━━━", "▬▬▬▬"], group="Fibonacci Settings", inline="1.650%")
+oneSixFiveZeroLineWidth = setOneSixFiveZeroLineWidth == "⸺⸺" ? 1 : setOneSixFiveZeroLineWidth == "‒‒‒‒‒‒‒" ? 2 : setOneSixFiveZeroLineWidth == "━━━━" ? 3 : 4
+setOneSixFiveZeroLineStyle = input.string("──────", "", ["──────", "- - - - - - -", "· · · · · · ·"], group="Fibonacci Settings", inline="1.650%")
+oneSixFiveZeroLineStyle = setOneSixFiveZeroLineStyle == "──────" ? line.style_solid : setOneSixFiveZeroLineStyle == "- - - - - - -" ? line.style_dashed : line.style_dotted
+
+// User inputs for the 1.618% Fibonacci level line properties
+enableOneSixOneEightLine = input.bool(true, title="", inline="1.618%", group="Fibonacci Settings")
+setOneSixOneEightLineLevel = input.float(defval=1.618, title="", inline="1.618%", group="Fibonacci Settings")
+oneSixOneEightLineColor = input.color(color.orange, title="", inline="1.618%", group="Fibonacci Settings")
+setOneSixOneEightLineWidth = input.string("‒‒‒‒‒‒‒", "", ["⸺⸺", "‒‒‒‒‒‒‒", "━━━━", "▬▬▬▬"], group="Fibonacci Settings", inline="1.618%")
+oneSixOneEightLineWidth = setOneSixOneEightLineWidth == "⸺⸺" ? 1 : setOneSixOneEightLineWidth == "‒‒‒‒‒‒‒" ? 2 : setOneSixOneEightLineWidth == "━━━━" ? 3 : 4
+setOneSixOneEightLineStyle = input.string("──────", "", ["──────", "- - - - - - -", "· · · · · · ·"], group="Fibonacci Settings", inline="1.618%")
+oneSixOneEightLineStyle = setOneSixOneEightLineStyle == "──────" ? line.style_solid : setOneSixOneEightLineStyle == "- - - - - - -" ? line.style_dashed : line.style_dotted
+
+// User inputs for the 1.500% Fibonacci level line properties
+enableOneFiveZeroZeroLine = input.bool(false, title="", inline="1.500%", group="Fibonacci Settings")
+setOneFiveZeroZeroLineLevel = input.float(defval=1.500, title="", inline="1.500%", group="Fibonacci Settings")
+oneFiveZeroZeroLineColor = input.color(color.rgb(0, 191, 255), title="", inline="1.500%", group="Fibonacci Settings")
+setOneFiveZeroZeroLineWidth = input.string("‒‒‒‒‒‒‒", "", ["⸺⸺", "‒‒‒‒‒‒‒", "━━━━", "▬▬▬▬"], group="Fibonacci Settings", inline="1.500%")
+oneFiveZeroZeroLineWidth = setOneFiveZeroZeroLineWidth == "⸺⸺" ? 1 : setOneFiveZeroZeroLineWidth == "‒‒‒‒‒‒‒" ? 2 : setOneFiveZeroZeroLineWidth == "━━━━" ? 3 : 4
+setOneFiveZeroZeroLineStyle = input.string("──────", "", ["──────", "- - - - - - -", "· · · · · · ·"], group="Fibonacci Settings", inline="1.500%")
+oneFiveZeroZeroLineStyle = setOneFiveZeroZeroLineStyle == "──────" ? line.style_solid : setOneFiveZeroZeroLineStyle == "- - - - - - -" ? line.style_dashed : line.style_dotted
+
+// User inputs for the 1.382% Fibonacci level line properties
+enableOneThreeEightTwoLine = input.bool(false, title="", inline="1.382%", group="Fibonacci Settings")
+setOneThreeEightTwoLineLevel = input.float(defval=1.382, title="", inline="1.382%", group="Fibonacci Settings")
+oneThreeEightTwoLineColor = input.color(color.rgb(69, 69, 69), title="", inline="1.382%", group="Fibonacci Settings")
+setOneThreeEightTwoLineWidth = input.string("‒‒‒‒‒‒‒", "", ["⸺⸺", "‒‒‒‒‒‒‒", "━━━━", "▬▬▬▬"], group="Fibonacci Settings", inline="1.382%")
+oneThreeEightTwoLineWidth = setOneThreeEightTwoLineWidth == "⸺⸺" ? 1 : setOneThreeEightTwoLineWidth == "‒‒‒‒‒‒‒" ? 2 : setOneThreeEightTwoLineWidth == "━━━━" ? 3 : 4
+setOneThreeEightTwoLineStyle = input.string("──────", "", ["──────", "- - - - - - -", "· · · · · · ·"], group="Fibonacci Settings", inline="1.382%")
+oneThreeEightTwoLineStyle = setOneThreeEightTwoLineStyle == "──────" ? line.style_solid : setOneThreeEightTwoLineStyle == "- - - - - - -" ? line.style_dashed : line.style_dotted
+
+// User inputs for the 1.236% Fibonacci level line properties
+enableOneTwoThreeSixLine = input.bool(false, title="", inline="1.236%", group="Fibonacci Settings")
+setOneTwoThreeSixLineLevel = input.float(defval=1.236, title="", inline="1.236%", group="Fibonacci Settings")
+oneTwoThreeSixLineColor = input.color(color.rgb(123, 104, 238), title="", inline="1.236%", group="Fibonacci Settings")
+setOneTwoThreeSixLineWidth = input.string("‒‒‒‒‒‒‒", "", ["⸺⸺", "‒‒‒‒‒‒‒", "━━━━", "▬▬▬▬"], group="Fibonacci Settings", inline="1.236%")
+oneTwoThreeSixLineWidth = setOneTwoThreeSixLineWidth == "⸺⸺" ? 1 : setOneTwoThreeSixLineWidth == "‒‒‒‒‒‒‒" ? 2 : setOneTwoThreeSixLineWidth == "━━━━" ? 3 : 4
+setOneTwoThreeSixLineStyle = input.string("──────", "", ["──────", "- - - - - - -", "· · · · · · ·"], group="Fibonacci Settings", inline="1.236%")
+oneTwoThreeSixLineStyle = setOneTwoThreeSixLineStyle == "──────" ? line.style_solid : setOneTwoThreeSixLineStyle == "- - - - - - -" ? line.style_dashed : line.style_dotted
+
+// User inputs for 1.000% line properties
+enableOneZeroZeroZeroLine = input.bool(true, title="", inline="1.000%", group="Fibonacci Settings")
+setOneZeroZeroZeroLineLevel = input.float(defval=1.000, title="", inline="1.000%", group="Fibonacci Settings")
+oneZeroZeroZeroLineColor = input.color(color.gray, title="", inline="1.000%", group="Fibonacci Settings")
+setOneZeroZeroZeroLineWidth = input.string("‒‒‒‒‒‒‒", "", ["⸺⸺", "‒‒‒‒‒‒‒", "━━━━", "▬▬▬▬"], group="Fibonacci Settings", inline="1.000%")
+oneZeroZeroZeroLineWidth = setOneZeroZeroZeroLineWidth == "⸺⸺" ? 1 : setOneZeroZeroZeroLineWidth == "‒‒‒‒‒‒‒" ? 2 : setOneZeroZeroZeroLineWidth == "━━━━" ? 3 : 4
+setOneZeroZeroZeroLineStyle = input.string("──────", "", ["──────", "- - - - - - -", "· · · · · · ·"], group="Fibonacci Settings", inline="1.000%")
+oneZeroZeroZeroLineStyle = setOneZeroZeroZeroLineStyle == "──────" ? line.style_solid : setOneZeroZeroZeroLineStyle == "- - - - - - -" ? line.style_dashed : line.style_dotted
+
+// User inputs for the 0.786% Fibonacci level line properties
+enableZeroSevenEightSixLine = input.bool(true, title="", inline="0.786%", group="Fibonacci Settings")
+setZeroSevenEightSixLineLevel = input.float(defval=0.786, title="", inline="0.786%", group="Fibonacci Settings")
+zeroSevenEightSixLineColor = input.color(color.rgb(100, 181, 246), title="", inline="0.786%", group="Fibonacci Settings")
+setZeroSevenEightSixLineWidth = input.string("‒‒‒‒‒‒‒", "", ["⸺⸺", "‒‒‒‒‒‒‒", "━━━━", "▬▬▬▬"], group="Fibonacci Settings", inline="0.786%")
+zeroSevenEightSixLineWidth = setZeroSevenEightSixLineWidth == "⸺⸺" ? 1 : setZeroSevenEightSixLineWidth == "‒‒‒‒‒‒‒" ? 2 : setZeroSevenEightSixLineWidth == "━━━━" ? 3 : 4
+setZeroSevenEightSixLineStyle = input.string("──────", "", ["──────", "- - - - - - -", "· · · · · · ·"], group="Fibonacci Settings", inline="0.786%")
+zeroSevenEightSixLineStyle = setZeroSevenEightSixLineStyle == "──────" ? line.style_solid : setZeroSevenEightSixLineStyle == "- - - - - - -" ? line.style_dashed : line.style_dotted
+
+// User inputs for the 0.650% Fibonacci level line properties
+enableZeroSixFiveZeroLine = input.bool(true, title="", inline="0.650%", group="Fibonacci Settings")
+setZeroSixFiveZeroLineLevel = input.float(defval=0.650, title="", inline="0.650%", group="Fibonacci Settings")
+zeroSixFiveZeroLineColor = input.color(color.yellow, title="", inline="0.650%", group="Fibonacci Settings")
+setZeroSixFiveZeroLineWidth = input.string("‒‒‒‒‒‒‒", "", ["⸺⸺", "‒‒‒‒‒‒‒", "━━━━", "▬▬▬▬"], group="Fibonacci Settings", inline="0.650%")
+zeroSixFiveZeroLineWidth = setZeroSixFiveZeroLineWidth == "⸺⸺" ? 1 : setZeroSixFiveZeroLineWidth == "‒‒‒‒‒‒‒" ? 2 : setZeroSixFiveZeroLineWidth == "━━━━" ? 3 : 4
+setZeroSixFiveZeroLineStyle = input.string("──────", "", ["──────", "- - - - - - -", "· · · · · · ·"], group="Fibonacci Settings", inline="0.650%")
+zeroSixFiveZeroLineStyle = setZeroSixFiveZeroLineStyle == "──────" ? line.style_solid : setZeroSixFiveZeroLineStyle == "- - - - - - -" ? line.style_dashed : line.style_dotted
+
+// User inputs for the 0.618% Fibonacci level line properties
+enableZeroSixOneEightLine = input.bool(true, title="", inline="0.618%", group="Fibonacci Settings")
+setZeroSixOneEightLineLevel = input.float(defval=0.618, title="", inline="0.618%", group="Fibonacci Settings")
+zeroSixOneEightLineColor = input.color(color.yellow, title="", inline="0.618%", group="Fibonacci Settings")
+setZeroSixOneEightLineWidth = input.string("‒‒‒‒‒‒‒", "", ["⸺⸺", "‒‒‒‒‒‒‒", "━━━━", "▬▬▬▬"], group="Fibonacci Settings", inline="0.618%")
+zeroSixOneEightLineWidth = setZeroSixOneEightLineWidth == "⸺⸺" ? 1 : setZeroSixOneEightLineWidth == "‒‒‒‒‒‒‒" ? 2 : setZeroSixOneEightLineWidth == "━━━━" ? 3 : 4
+setZeroSixOneEightLineStyle = input.string("──────", "", ["──────", "- - - - - - -", "· · · · · · ·"], group="Fibonacci Settings", inline="0.618%")
+zeroSixOneEightLineStyle = setZeroSixOneEightLineStyle == "──────" ? line.style_solid : setZeroSixOneEightLineStyle == "- - - - - - -" ? line.style_dashed : line.style_dotted
+
+// User inputs for the 0.500% Fibonacci level line properties
+enableZeroFiveZeroZeroLine = input.bool(true, title="", inline="0.500%", group="Fibonacci Settings")
+setZeroFiveZeroZeroLineLevel = input.float(defval=0.500, title="", inline="0.500%", group="Fibonacci Settings")
+zeroFiveZeroZeroLineColor = input.color(color.green, title="", inline="0.500%", group="Fibonacci Settings")
+setZeroFiveZeroZeroLineWidth = input.string("‒‒‒‒‒‒‒", "", ["⸺⸺", "‒‒‒‒‒‒‒", "━━━━", "▬▬▬▬"], group="Fibonacci Settings", inline="0.500%")
+zeroFiveZeroZeroLineWidth = setZeroFiveZeroZeroLineWidth == "⸺⸺" ? 1 : setZeroFiveZeroZeroLineWidth == "‒‒‒‒‒‒‒" ? 2 : setZeroFiveZeroZeroLineWidth == "━━━━" ? 3 : 4
+setZeroFiveZeroZeroLineStyle = input.string("──────", "", ["──────", "- - - - - - -", "· · · · · · ·"], group="Fibonacci Settings", inline="0.500%")
+zeroFiveZeroZeroLineStyle = setZeroFiveZeroZeroLineStyle == "──────" ? line.style_solid : setZeroFiveZeroZeroLineStyle == "- - - - - - -" ? line.style_dashed : line.style_dotted
+
+// User inputs for the 0.382% Fibonacci level line properties
+enableZeroThreeEightTwoLine = input.bool(true, title="", inline="0.382%", group="Fibonacci Settings")
+setZeroThreeEightTwoLineLevel = input.float(defval=0.382, title="", inline="0.382%", group="Fibonacci Settings")
+zeroThreeEightTwoLineColor = input.color(color.rgb(129, 199, 132), title="", inline="0.382%", group="Fibonacci Settings")
+setZeroThreeEightTwoLineWidth = input.string("‒‒‒‒‒‒‒", "", ["⸺⸺", "‒‒‒‒‒‒‒", "━━━━", "▬▬▬▬"], group="Fibonacci Settings", inline="0.382%")
+zeroThreeEightTwoLineWidth = setZeroThreeEightTwoLineWidth == "⸺⸺" ? 1 : setZeroThreeEightTwoLineWidth == "‒‒‒‒‒‒‒" ? 2 : setZeroThreeEightTwoLineWidth == "━━━━" ? 3 : 4
+setZeroThreeEightTwoLineStyle = input.string("──────", "", ["──────", "- - - - - - -", "· · · · · · ·"], group="Fibonacci Settings", inline="0.382%")
+zeroThreeEightTwoLineStyle = setZeroThreeEightTwoLineStyle == "──────" ? line.style_solid : setZeroThreeEightTwoLineStyle == "- - - - - - -" ? line.style_dashed : line.style_dotted
+
+// User inputs for the 0.236% Fibonacci level line properties
+enableZeroTwoThreeSixLine = input.bool(true, title="", inline="0.236%", group="Fibonacci Settings")
+setZeroTwoThreeSixLineLevel = input.float(defval=0.236, title="", inline="0.236%", group="Fibonacci Settings")
+zeroTwoThreeSixLineColor = input.color(color.red, title="", inline="0.236%", group="Fibonacci Settings")
+setZeroTwoThreeSixLineWidth = input.string("‒‒‒‒‒‒‒", "", ["⸺⸺", "‒‒‒‒‒‒‒", "━━━━", "▬▬▬▬"], group="Fibonacci Settings", inline="0.236%")
+zeroTwoThreeSixLineWidth = setZeroTwoThreeSixLineWidth == "⸺⸺" ? 1 : setZeroTwoThreeSixLineWidth == "‒‒‒‒‒‒‒" ? 2 : setZeroTwoThreeSixLineWidth == "━━━━" ? 3 : 4
+setZeroTwoThreeSixLineStyle = input.string("──────", "", ["──────", "- - - - - - -", "· · · · · · ·"], group="Fibonacci Settings", inline="0.236%")
+zeroTwoThreeSixLineStyle = setZeroTwoThreeSixLineStyle == "──────" ? line.style_solid : setZeroTwoThreeSixLineStyle == "- - - - - - -" ? line.style_dashed : line.style_dotted
+
+// User inputs for the 0.000% Fibonacci level line properties
+enableZeroZeroZeroZeroLine = input.bool(true, title="", inline="0.000%", group="Fibonacci Settings")
+setZeroZeroZeroZeroLineLevel = input.float(defval=0.000, title="", inline="0.000%", group="Fibonacci Settings")
+zeroZeroZeroZeroLineColor = input.color(color.gray, title="", inline="0.000%", group="Fibonacci Settings")
+setZeroZeroZeroZeroLineWidth = input.string("‒‒‒‒‒‒‒", "", ["⸺⸺", "‒‒‒‒‒‒‒", "━━━━", "▬▬▬▬"], group="Fibonacci Settings", inline="0.000%")
+zeroZeroZeroZeroLineWidth = setZeroZeroZeroZeroLineWidth == "⸺⸺" ? 1 : setZeroZeroZeroZeroLineWidth == "‒‒‒‒‒‒‒" ? 2 : setZeroZeroZeroZeroLineWidth == "━━━━" ? 3 : 4
+setZeroZeroZeroZeroLineStyle = input.string("──────", "", ["──────", "- - - - - - -", "· · · · · · ·"], group="Fibonacci Settings", inline="0.000%")
+zeroZeroZeroZeroLineStyle = setZeroZeroZeroZeroLineStyle == "──────" ? line.style_solid : setZeroZeroZeroZeroLineStyle == "- - - - - - -" ? line.style_dashed : line.style_dotted
+
+
+// User inputs for background color for each region
+enableBackground = input.bool(false, title="Enable Background", group="Background Settings")
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////// MAX and MIN
+var label maxLabel = na
+var label minLabel = na
+maxPrice = ta.highest(high, lookback)
+minPrice = ta.lowest(low, lookback)
+maxBar = ta.highestbars(high, lookback)  
+minBar = ta.lowestbars(low, lookback)  
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////// FIBONACCI LEVELS
+var float twoZeroZeroZeroPercentLevel = na
+twoZeroZeroZeroPercentLevel := minPrice + (maxPrice - minPrice) * setTwoZeroZeroZeroLineLevel
+
+var float oneSevenEightSixPercentLevel = na
+oneSevenEightSixPercentLevel := minPrice + (maxPrice - minPrice) * setOneSevenEightSixLineLevel
+
+var float oneSixFiveZeroPercentLevel = na
+oneSixFiveZeroPercentLevel := minPrice + (maxPrice - minPrice) * setOneSixFiveZeroLineLevel
+
+var float oneSixOneEightPercentLevel = na
+oneSixOneEightPercentLevel := minPrice + (maxPrice - minPrice) * setOneSixOneEightLineLevel
+
+var float oneFiveZeroZeroPercentLevel = na
+oneFiveZeroZeroPercentLevel := minPrice + (maxPrice - minPrice) * setOneFiveZeroZeroLineLevel
+
+var float oneThreeEightTwoPercentLevel = na
+oneThreeEightTwoPercentLevel := minPrice + (maxPrice - minPrice) * setOneThreeEightTwoLineLevel
+
+var float oneTwoThreeSixPercentLevel = na
+oneTwoThreeSixPercentLevel := minPrice + (maxPrice - minPrice) * setOneTwoThreeSixLineLevel
+
+var float oneZeroZeroZeroPercentLevel = na
+oneZeroZeroZeroPercentLevel := minPrice + (maxPrice - minPrice) * setOneZeroZeroZeroLineLevel
+
+var float zeroSevenEightSixPercentLevel = na
+zeroSevenEightSixPercentLevel := minPrice + (maxPrice - minPrice) * setZeroSevenEightSixLineLevel
+
+var float zeroSixFiveZeroPercentLevel = na
+zeroSixFiveZeroPercentLevel := minPrice + (maxPrice - minPrice) * setZeroSixFiveZeroLineLevel
+
+var float zeroSixOneEightPercentLevel = na
+zeroSixOneEightPercentLevel := minPrice + (maxPrice - minPrice) * setZeroSixOneEightLineLevel
+
+var float zeroFiveZeroZeroPercentLevel = na
+zeroFiveZeroZeroPercentLevel := minPrice + (maxPrice - minPrice) * setZeroFiveZeroZeroLineLevel
+
+var float zeroThreeEightTwoPercentLevel = na
+zeroThreeEightTwoPercentLevel := minPrice + (maxPrice - minPrice) * setZeroThreeEightTwoLineLevel
+
+var float zeroTwoThreeSixPercentLevel = na
+zeroTwoThreeSixPercentLevel := minPrice + (maxPrice - minPrice) * setZeroTwoThreeSixLineLevel
+
+var float zeroZeroZeroZeroPercentLevel = na
+zeroZeroZeroZeroPercentLevel := minPrice + (maxPrice - minPrice) * setZeroZeroZeroZeroLineLevel
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////// TREND LINES
+var line ascendingTrendline = na
+ascendingTrendlineStartBar = bar_index[lookback]
+ascendingTrendlineEndBar = bar_index
+ascendingTrendlineStartPrice = minPrice
+ascendingTrendlineEndPrice = maxPrice
+
+var line descendingTrendline = na
+descendingTrendlineStartBar = bar_index[lookback]
+descendingTrendlineEndBar = bar_index
+descendingTrendlineStartPrice = maxPrice
+descendingTrendlineEndPrice = minPrice
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////// INIT VARIABLES
+// 2.000%
+var line twoZeroZeroZeroPercentLine = na
+var label twoZeroZeroZeroPercentLabel = na
+
+// 1.786%
+var line oneSevenEightSixPercentLine = na
+var label oneSevenEightSixPercentLabel = na
+
+// 1.650%
+var line oneSixFiveZeroPercentLine = na
+var label oneSixFiveZeroPercentLabel = na
+
+// 1.618%
+var line oneSixOneEightPercentLine = na
+var label oneSixOneEightPercentLabel = na
+
+// 1.500%
+var line oneFiveZeroZeroPercentLine = na
+var label oneFiveZeroZeroPercentLabel = na
+
+// 1.382%
+var line oneThreeEightTwoPercentLine = na
+var label oneThreeEightTwoPercentLabel = na
+
+// 1.236%
+var line oneTwoThreeSixPercentLine = na
+var label oneTwoThreeSixPercentLabel = na
+
+// 1.000%
+var line oneZeroZeroZeroPercentLine = na
+var label oneZeroZeroZeroPercentLabel = na
+
+// 0.786%
+var line zeroSevenEightSixPercentLine = na
+var label zeroSevenEightSixPercentLabel = na
+
+// 0.650%
+var line zeroSixFiveZeroPercentLine = na
+var label zeroSixFiveZeroPercentLabel = na
+
+// 0.618%
+var line zeroSixOneEightPercentLine = na
+var label zeroSixOneEightPercentLabel = na
+
+// 0.500%
+var line zeroFiveZeroZeroPercentLine = na
+var label zeroFiveZeroZeroPercentLabel = na
+
+// 0.382%
+var line zeroThreeEightTwoPercentLine = na
+var label zeroThreeEightTwoPercentLabel = na
+
+// 0.236%
+var line zeroTwoThreeSixPercentLine = na
+var label zeroTwoThreeSixPercentLabel = na
+
+// 0.000%
+var line zeroZeroZeroZeroPercentLine = na
+var label zeroZeroZeroZeroPercentLabel = na
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////// DRAWING LABELS
+// Handling the 2.000% level label
+if enableTwoZeroZeroZeroLine
+    if na(twoZeroZeroZeroPercentLabel)
+        twoZeroZeroZeroPercentLabel := label.new(bar_index, twoZeroZeroZeroPercentLevel, str.tostring(setTwoZeroZeroZeroLineLevel) + " (" + str.tostring(twoZeroZeroZeroPercentLevel) + ")", xloc=xloc.bar_index, yloc=yloc.price, textcolor=twoZeroZeroZeroLineColor, style=label.style_label_left, color=color.new(color.white, 100))
+    else
+        label.set_xy(twoZeroZeroZeroPercentLabel, bar_index, twoZeroZeroZeroPercentLevel)
+        label.set_text(twoZeroZeroZeroPercentLabel, str.tostring(setTwoZeroZeroZeroLineLevel) + " (" + str.tostring(twoZeroZeroZeroPercentLevel) + ")")
+else
+    if not na(twoZeroZeroZeroPercentLabel)
+        label.delete(twoZeroZeroZeroPercentLabel)
+        twoZeroZeroZeroPercentLabel := na
+
+// Handling the 1.786% level label
+if enableOneSevenEightSixLine
+    if na(oneSevenEightSixPercentLabel)
+        oneSevenEightSixPercentLabel := label.new(bar_index, oneSevenEightSixPercentLevel, str.tostring(setOneSevenEightSixLineLevel) + " (" + str.tostring(oneSevenEightSixPercentLevel) + ")", xloc=xloc.bar_index, yloc=yloc.price, textcolor=oneSevenEightSixLineColor, style=label.style_label_left, color=color.new(color.white, 100))
+    else
+        label.set_xy(oneSevenEightSixPercentLabel, bar_index, oneSevenEightSixPercentLevel)
+        label.set_text(oneSevenEightSixPercentLabel, str.tostring(setOneSevenEightSixLineLevel) + " (" + str.tostring(oneSevenEightSixPercentLevel) + ")")
+else
+    if not na(oneSevenEightSixPercentLabel)
+        label.delete(oneSevenEightSixPercentLabel)
+        oneSevenEightSixPercentLabel := na
+
+// Handling the 1.650% level label
+if enableOneSixFiveZeroLine
+    if na(oneSixFiveZeroPercentLabel)
+        oneSixFiveZeroPercentLabel := label.new(bar_index, oneSixFiveZeroPercentLevel, str.tostring(setOneSixFiveZeroLineLevel) + " (" + str.tostring(oneSixFiveZeroPercentLevel) + ")", xloc=xloc.bar_index, yloc=yloc.price, textcolor=oneSixFiveZeroLineColor, style=label.style_label_left, color=color.new(color.white, 100))
+    else
+        label.set_xy(oneSixFiveZeroPercentLabel, bar_index, oneSixFiveZeroPercentLevel)
+        label.set_text(oneSixFiveZeroPercentLabel, str.tostring(setOneSixFiveZeroLineLevel) + " (" + str.tostring(oneSixFiveZeroPercentLevel) + ")")
+else
+    if not na(oneSixFiveZeroPercentLabel)
+        label.delete(oneSixFiveZeroPercentLabel)
+        oneSixFiveZeroPercentLabel := na
+
+// Handling the 1.618% level label
+if enableOneSixOneEightLine
+    if na(oneSixOneEightPercentLabel)
+        oneSixOneEightPercentLabel := label.new(bar_index, oneSixOneEightPercentLevel, str.tostring(setOneSixOneEightLineLevel) + " (" + str.tostring(oneSixOneEightPercentLevel) + ")", xloc=xloc.bar_index, yloc=yloc.price, textcolor=oneSixOneEightLineColor, style=label.style_label_left, color=color.new(color.white, 100))
+    else
+        label.set_xy(oneSixOneEightPercentLabel, bar_index, oneSixOneEightPercentLevel)
+        label.set_text(oneSixOneEightPercentLabel, str.tostring(setOneSixOneEightLineLevel) + " (" + str.tostring(oneSixOneEightPercentLevel) + ")")
+else
+    if not na(oneSixOneEightPercentLabel)
+        label.delete(oneSixOneEightPercentLabel)
+        oneSixOneEightPercentLabel := na
+
+// Handling the 1.500% level label
+if enableOneFiveZeroZeroLine
+    if na(oneFiveZeroZeroPercentLabel)
+        oneFiveZeroZeroPercentLabel := label.new(bar_index, oneFiveZeroZeroPercentLevel, str.tostring(setOneFiveZeroZeroLineLevel) + " (" + str.tostring(oneFiveZeroZeroPercentLevel) + ")", xloc=xloc.bar_index, yloc=yloc.price, textcolor=oneFiveZeroZeroLineColor, style=label.style_label_left, color=color.new(color.white, 100))
+    else
+        label.set_xy(oneFiveZeroZeroPercentLabel, bar_index, oneFiveZeroZeroPercentLevel)
+        label.set_text(oneFiveZeroZeroPercentLabel, str.tostring(setOneFiveZeroZeroLineLevel) + " (" + str.tostring(oneFiveZeroZeroPercentLevel) + ")")
+else
+    if not na(oneFiveZeroZeroPercentLabel)
+        label.delete(oneFiveZeroZeroPercentLabel)
+        oneFiveZeroZeroPercentLabel := na
+
+// Handling the 1.382% level label
+if enableOneThreeEightTwoLine
+    if na(oneThreeEightTwoPercentLabel)
+        oneThreeEightTwoPercentLabel := label.new(bar_index, oneThreeEightTwoPercentLevel, str.tostring(setOneThreeEightTwoLineLevel) + " (" + str.tostring(oneThreeEightTwoPercentLevel) + ")", xloc=xloc.bar_index, yloc=yloc.price, textcolor=oneThreeEightTwoLineColor, style=label.style_label_left, color=color.new(color.white, 100))
+    else
+        label.set_xy(oneThreeEightTwoPercentLabel, bar_index, oneThreeEightTwoPercentLevel)
+        label.set_text(oneThreeEightTwoPercentLabel, str.tostring(setOneThreeEightTwoLineLevel) + " (" + str.tostring(oneThreeEightTwoPercentLevel) + ")")
+else
+    if not na(oneThreeEightTwoPercentLabel)
+        label.delete(oneThreeEightTwoPercentLabel)
+        oneThreeEightTwoPercentLabel := na
+
+// Handling the 1.236% level label
+if enableOneTwoThreeSixLine
+    if na(oneTwoThreeSixPercentLabel)
+        oneTwoThreeSixPercentLabel := label.new(bar_index, oneTwoThreeSixPercentLevel, str.tostring(setOneTwoThreeSixLineLevel) + " (" + str.tostring(oneTwoThreeSixPercentLevel) + ")", xloc=xloc.bar_index, yloc=yloc.price, textcolor=oneTwoThreeSixLineColor, style=label.style_label_left, color=color.new(color.white, 100))
+    else
+        label.set_xy(oneTwoThreeSixPercentLabel, bar_index, oneTwoThreeSixPercentLevel)
+        label.set_text(oneTwoThreeSixPercentLabel, str.tostring(setOneTwoThreeSixLineLevel) + " (" + str.tostring(oneTwoThreeSixPercentLevel) + ")")
+else
+    if not na(oneTwoThreeSixPercentLabel)
+        label.delete(oneTwoThreeSixPercentLabel)
+        oneTwoThreeSixPercentLabel := na
+
+// Handling the 1.000% level label
+if enableOneZeroZeroZeroLine
+    if na(oneZeroZeroZeroPercentLabel)
+        oneZeroZeroZeroPercentLabel := label.new(bar_index, oneZeroZeroZeroPercentLevel, str.tostring(setOneZeroZeroZeroLineLevel) + " (" + str.tostring(oneZeroZeroZeroPercentLevel) + ")", xloc=xloc.bar_index, yloc=yloc.price, textcolor=oneZeroZeroZeroLineColor, style=label.style_label_left, color=color.new(color.white, 100))
+    else
+        label.set_xy(oneZeroZeroZeroPercentLabel, bar_index, oneZeroZeroZeroPercentLevel)
+        label.set_text(oneZeroZeroZeroPercentLabel, str.tostring(setOneZeroZeroZeroLineLevel) + " (" + str.tostring(oneZeroZeroZeroPercentLevel) + ")")
+else
+    if not na(oneZeroZeroZeroPercentLabel)
+        label.delete(oneZeroZeroZeroPercentLabel)
+        oneZeroZeroZeroPercentLabel := na
+
+// Handling the 0.786% level label
+if enableZeroSevenEightSixLine
+    if na(zeroSevenEightSixPercentLabel)
+        zeroSevenEightSixPercentLabel := label.new(bar_index, zeroSevenEightSixPercentLevel, str.tostring(setZeroSevenEightSixLineLevel) + " (" + str.tostring(zeroSevenEightSixPercentLevel) + ")", xloc=xloc.bar_index, yloc=yloc.price, textcolor=zeroSevenEightSixLineColor, style=label.style_label_left, color=color.new(color.white, 100))
+    else
+        label.set_xy(zeroSevenEightSixPercentLabel, bar_index, zeroSevenEightSixPercentLevel)
+        label.set_text(zeroSevenEightSixPercentLabel, str.tostring(setZeroSevenEightSixLineLevel) + " (" + str.tostring(zeroSevenEightSixPercentLevel) + ")")
+else
+    if not na(zeroSevenEightSixPercentLabel)
+        label.delete(zeroSevenEightSixPercentLabel)
+        zeroSevenEightSixPercentLabel := na
+
+// Handling the 0.650% level label
+if enableZeroSixFiveZeroLine
+    if na(zeroSixFiveZeroPercentLabel)
+        zeroSixFiveZeroPercentLabel := label.new(bar_index, zeroSixFiveZeroPercentLevel, str.tostring(setZeroSixFiveZeroLineLevel) + " (" + str.tostring(zeroSixFiveZeroPercentLevel) + ")", xloc=xloc.bar_index, yloc=yloc.price, textcolor=zeroSixFiveZeroLineColor, style=label.style_label_left, color=color.new(color.white, 100))
+    else
+        label.set_xy(zeroSixFiveZeroPercentLabel, bar_index, zeroSixFiveZeroPercentLevel)
+        label.set_text(zeroSixFiveZeroPercentLabel, str.tostring(setZeroSixFiveZeroLineLevel) + " (" + str.tostring(zeroSixFiveZeroPercentLevel) + ")")
+else
+    if not na(zeroSixFiveZeroPercentLabel)
+        label.delete(zeroSixFiveZeroPercentLabel)
+        zeroSixFiveZeroPercentLabel := na
+
+// Handling the 0.618% level label
+if enableZeroSixOneEightLine
+    if na(zeroSixOneEightPercentLabel)
+        zeroSixOneEightPercentLabel := label.new(bar_index, zeroSixOneEightPercentLevel, str.tostring(setZeroSixOneEightLineLevel) + " (" + str.tostring(zeroSixOneEightPercentLevel) + ")", xloc=xloc.bar_index, yloc=yloc.price, textcolor=zeroSixOneEightLineColor, style=label.style_label_left, color=color.new(color.white, 100))
+    else
+        label.set_xy(zeroSixOneEightPercentLabel, bar_index, zeroSixOneEightPercentLevel)
+        label.set_text(zeroSixOneEightPercentLabel, str.tostring(setZeroSixOneEightLineLevel) + " (" + str.tostring(zeroSixOneEightPercentLevel) + ")")
+else
+    if not na(zeroSixOneEightPercentLabel)
+        label.delete(zeroSixOneEightPercentLabel)
+        zeroSixOneEightPercentLabel := na
+
+// Handling the 0.500% level label
+if enableZeroFiveZeroZeroLine
+    if na(zeroFiveZeroZeroPercentLabel)
+        zeroFiveZeroZeroPercentLabel := label.new(bar_index, zeroFiveZeroZeroPercentLevel, str.tostring(setZeroFiveZeroZeroLineLevel) + " (" + str.tostring(zeroFiveZeroZeroPercentLevel) + ")", xloc=xloc.bar_index, yloc=yloc.price, textcolor=zeroFiveZeroZeroLineColor, style=label.style_label_left, color=color.new(color.white, 100))
+    else
+        label.set_xy(zeroFiveZeroZeroPercentLabel, bar_index, zeroFiveZeroZeroPercentLevel)
+        label.set_text(zeroFiveZeroZeroPercentLabel, str.tostring(setZeroFiveZeroZeroLineLevel) + " (" + str.tostring(zeroFiveZeroZeroPercentLevel) + ")")
+else
+    if not na(zeroFiveZeroZeroPercentLabel)
+        label.delete(zeroFiveZeroZeroPercentLabel)
+        zeroFiveZeroZeroPercentLabel := na
+
+// Handling the 0.382% level label
+if enableZeroThreeEightTwoLine
+    if na(zeroThreeEightTwoPercentLabel)
+        zeroThreeEightTwoPercentLabel := label.new(bar_index, zeroThreeEightTwoPercentLevel, str.tostring(setZeroThreeEightTwoLineLevel) + " (" + str.tostring(zeroThreeEightTwoPercentLevel) + ")", xloc=xloc.bar_index, yloc=yloc.price, textcolor=zeroThreeEightTwoLineColor, style=label.style_label_left, color=color.new(color.white, 100))
+    else
+        label.set_xy(zeroThreeEightTwoPercentLabel, bar_index, zeroThreeEightTwoPercentLevel)
+        label.set_text(zeroThreeEightTwoPercentLabel, str.tostring(setZeroThreeEightTwoLineLevel) + " (" + str.tostring(zeroThreeEightTwoPercentLevel) + ")")
+else
+    if not na(zeroThreeEightTwoPercentLabel)
+        label.delete(zeroThreeEightTwoPercentLabel)
+        zeroThreeEightTwoPercentLabel := na
+
+// Handling the 0.236% level label
+if enableZeroTwoThreeSixLine
+    if na(zeroTwoThreeSixPercentLabel)
+        zeroTwoThreeSixPercentLabel := label.new(bar_index, zeroTwoThreeSixPercentLevel, str.tostring(setZeroTwoThreeSixLineLevel) + " (" + str.tostring(zeroTwoThreeSixPercentLevel) + ")", xloc=xloc.bar_index, yloc=yloc.price, textcolor=zeroTwoThreeSixLineColor, style=label.style_label_left, color=color.new(color.white, 100))
+    else
+        label.set_xy(zeroTwoThreeSixPercentLabel, bar_index, zeroTwoThreeSixPercentLevel)
+        label.set_text(zeroTwoThreeSixPercentLabel, str.tostring(setZeroTwoThreeSixLineLevel) + " (" + str.tostring(zeroTwoThreeSixPercentLevel) + ")")
+else
+    if not na(zeroTwoThreeSixPercentLabel)
+        label.delete(zeroTwoThreeSixPercentLabel)
+        zeroTwoThreeSixPercentLabel := na
+
+// Handling the 0.000% level label
+if enableZeroZeroZeroZeroLine
+    if na(zeroZeroZeroZeroPercentLabel)
+        zeroZeroZeroZeroPercentLabel := label.new(bar_index, zeroZeroZeroZeroPercentLevel, str.tostring(setZeroZeroZeroZeroLineLevel) + " (" + str.tostring(zeroZeroZeroZeroPercentLevel) + ")", xloc=xloc.bar_index, yloc=yloc.price, textcolor=zeroZeroZeroZeroLineColor, style=label.style_label_left, color=color.new(color.white, 100))
+    else
+        label.set_xy(zeroZeroZeroZeroPercentLabel, bar_index, zeroZeroZeroZeroPercentLevel)
+        label.set_text(zeroZeroZeroZeroPercentLabel, str.tostring(setZeroZeroZeroZeroLineLevel) + " (" + str.tostring(zeroZeroZeroZeroPercentLevel) + ")")
+else
+    if not na(zeroZeroZeroZeroPercentLabel)
+        label.delete(zeroZeroZeroZeroPercentLabel)
+        zeroZeroZeroZeroPercentLabel := na
+
+
+// Handling the MAX label
+if enableMax
+    if na(maxLabel)
+        maxLabel := label.new(bar_index + maxBar, maxPrice, maxLabelText, style=label.style_label_down, color=maxLabelColor, textcolor=maxLabelTextColor, size=size.small, yloc=yloc.price)
+    else
+        label.set_xy(maxLabel, bar_index + maxBar, maxPrice)
+else
+    if not na(maxLabel)
+        label.delete(maxLabel)
+        maxLabel := na
+
+// Handling the MIN label
+if enableMin
+    if na(minLabel)
+        minLabel := label.new(bar_index + minBar, minPrice, minLabelText, style=label.style_label_up, color=minLabelColor, textcolor=minLabelTextColor, size=size.small, yloc=yloc.price)
+    else
+        label.set_xy(minLabel, bar_index + minBar, minPrice)
+else
+    if not na(minLabel)
+        label.delete(minLabel)
+        minLabel := na
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////// BACKGROUND REGIONS
+// Draw the background for the 2.000% region
+var box twoZeroZeroZeroBox = na
+if enableBackground and enableTwoZeroZeroZeroLine
+    if na(twoZeroZeroZeroBox)
+        twoZeroZeroZeroBox := box.new(left=bar_index[lookback], top=twoZeroZeroZeroPercentLevel, right=bar_index, bottom=oneSevenEightSixPercentLevel, border_width=0, bgcolor=color.new(twoZeroZeroZeroLineColor, 80))
+    else
+        box.set_left(twoZeroZeroZeroBox, bar_index[lookback])
+        box.set_right(twoZeroZeroZeroBox, bar_index)
+        box.set_top(twoZeroZeroZeroBox, twoZeroZeroZeroPercentLevel)
+        box.set_bottom(twoZeroZeroZeroBox, oneSevenEightSixPercentLevel)
+        box.set_bgcolor(twoZeroZeroZeroBox, color.new(twoZeroZeroZeroLineColor, 80))
+else
+    if not na(twoZeroZeroZeroBox)
+        box.delete(twoZeroZeroZeroBox)
+        twoZeroZeroZeroBox := na
+
+// Draw the background for the 1.786% region
+var box oneSevenEightSixBox = na
+if enableBackground and enableOneSevenEightSixLine
+    if na(oneSevenEightSixBox)
+        oneSevenEightSixBox := box.new(left=bar_index[lookback], top=oneSevenEightSixPercentLevel, right=bar_index, bottom=oneSixFiveZeroPercentLevel, border_width=0, bgcolor=color.new(oneSevenEightSixLineColor, 80))
+    else
+        box.set_left(oneSevenEightSixBox, bar_index[lookback])
+        box.set_right(oneSevenEightSixBox, bar_index)
+        box.set_top(oneSevenEightSixBox, oneSevenEightSixPercentLevel)
+        box.set_bottom(oneSevenEightSixBox, oneSixFiveZeroPercentLevel)
+        box.set_bgcolor(oneSevenEightSixBox, color.new(oneSevenEightSixLineColor, 80))
+else
+    if not na(oneSevenEightSixBox)
+        box.delete(oneSevenEightSixBox)
+        oneSevenEightSixBox := na
+
+// Draw the background for the 1.650% region
+var box oneSixFiveZeroBox = na
+if enableBackground and enableOneSixFiveZeroLine
+    if na(oneSixFiveZeroBox)
+        oneSixFiveZeroBox := box.new(left=bar_index[lookback], top=oneSixFiveZeroPercentLevel, right=bar_index, bottom=oneSixOneEightPercentLevel, border_width=0, bgcolor=color.new(oneSixFiveZeroLineColor, 80))
+    else
+        box.set_left(oneSixFiveZeroBox, bar_index[lookback])
+        box.set_right(oneSixFiveZeroBox, bar_index)
+        box.set_top(oneSixFiveZeroBox, oneSixFiveZeroPercentLevel)
+        box.set_bottom(oneSixFiveZeroBox, oneSixOneEightPercentLevel)
+        box.set_bgcolor(oneSixFiveZeroBox, color.new(oneSixFiveZeroLineColor, 80))
+else
+    if not na(oneSixFiveZeroBox)
+        box.delete(oneSixFiveZeroBox)
+        oneSixFiveZeroBox := na
+
+// Draw the background for the 1.618% region
+var box oneSixOneEightBox = na
+if enableBackground and enableOneSixOneEightLine
+    if na(oneSixOneEightBox)
+        oneSixOneEightBox := box.new(left=bar_index[lookback], top=oneSixOneEightPercentLevel, right=bar_index, bottom=oneFiveZeroZeroPercentLevel, border_width=0, bgcolor=color.new(oneSixOneEightLineColor, 80))
+    else
+        box.set_left(oneSixOneEightBox, bar_index[lookback])
+        box.set_right(oneSixOneEightBox, bar_index)
+        box.set_top(oneSixOneEightBox, oneSixOneEightPercentLevel)
+        box.set_bottom(oneSixOneEightBox, oneFiveZeroZeroPercentLevel)
+        box.set_bgcolor(oneSixOneEightBox, color.new(oneSixOneEightLineColor, 80))
+else
+    if not na(oneSixOneEightBox)
+        box.delete(oneSixOneEightBox)
+        oneSixOneEightBox := na
+
+// Draw the background for the 1.500% region
+var box oneFiveZeroZeroBox = na
+if enableBackground and enableOneFiveZeroZeroLine
+    if na(oneFiveZeroZeroBox)
+        oneFiveZeroZeroBox := box.new(left=bar_index[lookback], top=oneFiveZeroZeroPercentLevel, right=bar_index, bottom=oneThreeEightTwoPercentLevel, border_width=0, bgcolor=color.new(oneFiveZeroZeroLineColor, 80))
+    else
+        box.set_left(oneFiveZeroZeroBox, bar_index[lookback])
+        box.set_right(oneFiveZeroZeroBox, bar_index)
+        box.set_top(oneFiveZeroZeroBox, oneFiveZeroZeroPercentLevel)
+        box.set_bottom(oneFiveZeroZeroBox, oneThreeEightTwoPercentLevel)
+        box.set_bgcolor(oneFiveZeroZeroBox, color.new(oneFiveZeroZeroLineColor, 80))
+else
+    if not na(oneFiveZeroZeroBox)
+        box.delete(oneFiveZeroZeroBox)
+        oneFiveZeroZeroBox := na
+
+// Draw the background for the 1.382% region
+var box oneThreeEightTwoBox = na
+if enableBackground and enableOneThreeEightTwoLine
+    if na(oneThreeEightTwoBox)
+        oneThreeEightTwoBox := box.new(left=bar_index[lookback], top=oneThreeEightTwoPercentLevel, right=bar_index, bottom=oneTwoThreeSixPercentLevel, border_width=0, bgcolor=color.new(oneThreeEightTwoLineColor, 80))
+    else
+        box.set_left(oneThreeEightTwoBox, bar_index[lookback])
+        box.set_right(oneThreeEightTwoBox, bar_index)
+        box.set_top(oneThreeEightTwoBox, oneThreeEightTwoPercentLevel)
+        box.set_bottom(oneThreeEightTwoBox, oneTwoThreeSixPercentLevel)
+        box.set_bgcolor(oneThreeEightTwoBox, color.new(oneThreeEightTwoLineColor, 80))
+else
+    if not na(oneThreeEightTwoBox)
+        box.delete(oneThreeEightTwoBox)
+        oneThreeEightTwoBox := na
+
+// Draw the background for the 1.236% region
+var box oneTwoThreeSixBox = na
+if enableBackground and enableOneTwoThreeSixLine
+    if na(oneTwoThreeSixBox)
+        oneTwoThreeSixBox := box.new(left=bar_index[lookback], top=oneTwoThreeSixPercentLevel, right=bar_index, bottom=oneZeroZeroZeroPercentLevel, border_width=0, bgcolor=color.new(oneTwoThreeSixLineColor, 80))
+    else
+        box.set_left(oneTwoThreeSixBox, bar_index[lookback])
+        box.set_right(oneTwoThreeSixBox, bar_index)
+        box.set_top(oneTwoThreeSixBox, oneTwoThreeSixPercentLevel)
+        box.set_bottom(oneTwoThreeSixBox, oneZeroZeroZeroPercentLevel)
+        box.set_bgcolor(oneTwoThreeSixBox, color.new(oneTwoThreeSixLineColor, 80))
+else
+    if not na(oneTwoThreeSixBox)
+        box.delete(oneTwoThreeSixBox)
+        oneTwoThreeSixBox := na
+
+// Draw the background for the 1.000% region
+var box oneZeroZeroZeroBox = na
+if enableBackground and enableOneZeroZeroZeroLine
+    if na(oneZeroZeroZeroBox)
+        oneZeroZeroZeroBox := box.new(left=bar_index[lookback], top=oneZeroZeroZeroPercentLevel, right=bar_index, bottom=zeroSevenEightSixPercentLevel, border_width=0, bgcolor=color.new(oneZeroZeroZeroLineColor, 80))
+    else
+        box.set_left(oneZeroZeroZeroBox, bar_index[lookback])
+        box.set_right(oneZeroZeroZeroBox, bar_index)
+        box.set_top(oneZeroZeroZeroBox, oneZeroZeroZeroPercentLevel)
+        box.set_bottom(oneZeroZeroZeroBox, zeroSevenEightSixPercentLevel)
+        box.set_bgcolor(oneZeroZeroZeroBox, color.new(oneZeroZeroZeroLineColor, 80))
+else
+    if not na(oneZeroZeroZeroBox)
+        box.delete(oneZeroZeroZeroBox)
+        oneZeroZeroZeroBox := na
+
+// Draw the background for the 0.786% region
+var box zeroSevenEightSixBox = na
+if enableBackground and enableZeroSevenEightSixLine
+    if na(zeroSevenEightSixBox)
+        zeroSevenEightSixBox := box.new(left=bar_index[lookback], top=zeroSevenEightSixPercentLevel, right=bar_index, bottom=zeroSixFiveZeroPercentLevel, border_width=0, bgcolor=color.new(zeroSevenEightSixLineColor, 80))
+    else
+        box.set_left(zeroSevenEightSixBox, bar_index[lookback])
+        box.set_right(zeroSevenEightSixBox, bar_index)
+        box.set_top(zeroSevenEightSixBox, zeroSevenEightSixPercentLevel)
+        box.set_bottom(zeroSevenEightSixBox, zeroSixFiveZeroPercentLevel)
+        box.set_bgcolor(zeroSevenEightSixBox, color.new(zeroSevenEightSixLineColor, 80))
+else
+    if not na(zeroSevenEightSixBox)
+        box.delete(zeroSevenEightSixBox)
+        zeroSevenEightSixBox := na
+
+// Draw the background for the 0.650% region
+var box zeroSixFiveZeroBox = na
+if enableBackground and enableZeroSixFiveZeroLine
+    if na(zeroSixFiveZeroBox)
+        zeroSixFiveZeroBox := box.new(left=bar_index[lookback], top=zeroSixFiveZeroPercentLevel, right=bar_index, bottom=zeroSixOneEightPercentLevel, border_width=0, bgcolor=color.new(zeroSixFiveZeroLineColor, 80))
+    else
+        box.set_left(zeroSixFiveZeroBox, bar_index[lookback])
+        box.set_right(zeroSixFiveZeroBox, bar_index)
+        box.set_top(zeroSixFiveZeroBox, zeroSixFiveZeroPercentLevel)
+        box.set_bottom(zeroSixFiveZeroBox, zeroSixOneEightPercentLevel)
+        box.set_bgcolor(zeroSixFiveZeroBox, color.new(zeroSixFiveZeroLineColor, 80))
+else
+    if not na(zeroSixFiveZeroBox)
+        box.delete(zeroSixFiveZeroBox)
+        zeroSixFiveZeroBox := na
+
+// Draw the background for the 0.618% region
+var box zeroSixOneEightBox = na
+if enableBackground and enableZeroSixOneEightLine
+    if na(zeroSixOneEightBox)
+        zeroSixOneEightBox := box.new(left=bar_index[lookback], top=zeroSixOneEightPercentLevel, right=bar_index, bottom=zeroFiveZeroZeroPercentLevel, border_width=0, bgcolor=color.new(zeroSixOneEightLineColor, 80))
+    else
+        box.set_left(zeroSixOneEightBox, bar_index[lookback])
+        box.set_right(zeroSixOneEightBox, bar_index)
+        box.set_top(zeroSixOneEightBox, zeroSixOneEightPercentLevel)
+        box.set_bottom(zeroSixOneEightBox, zeroFiveZeroZeroPercentLevel)
+        box.set_bgcolor(zeroSixOneEightBox, color.new(zeroSixOneEightLineColor, 80))
+else
+    if not na(zeroSixOneEightBox)
+        box.delete(zeroSixOneEightBox)
+        zeroSixOneEightBox := na
+
+// Draw the background for the 0.500% region
+var box zeroFiveZeroZeroBox = na
+if enableBackground and enableZeroFiveZeroZeroLine
+    if na(zeroFiveZeroZeroBox)
+        zeroFiveZeroZeroBox := box.new(left=bar_index[lookback], top=zeroFiveZeroZeroPercentLevel, right=bar_index, bottom=zeroThreeEightTwoPercentLevel, border_width=0, bgcolor=color.new(zeroFiveZeroZeroLineColor, 80))
+    else
+        box.set_left(zeroFiveZeroZeroBox, bar_index[lookback])
+        box.set_right(zeroFiveZeroZeroBox, bar_index)
+        box.set_top(zeroFiveZeroZeroBox, zeroFiveZeroZeroPercentLevel)
+        box.set_bottom(zeroFiveZeroZeroBox, zeroThreeEightTwoPercentLevel)
+        box.set_bgcolor(zeroFiveZeroZeroBox, color.new(zeroFiveZeroZeroLineColor, 80))
+else
+    if not na(zeroFiveZeroZeroBox)
+        box.delete(zeroFiveZeroZeroBox)
+        zeroFiveZeroZeroBox := na
+
+// Draw the background for the 0.382% region
+var box zeroThreeEightTwoBox = na
+if enableBackground and enableZeroThreeEightTwoLine
+    if na(zeroThreeEightTwoBox)
+        zeroThreeEightTwoBox := box.new(left=bar_index[lookback], top=zeroThreeEightTwoPercentLevel, right=bar_index, bottom=zeroTwoThreeSixPercentLevel, border_width=0, bgcolor=color.new(zeroThreeEightTwoLineColor, 80))
+    else
+        box.set_left(zeroThreeEightTwoBox, bar_index[lookback])
+        box.set_right(zeroThreeEightTwoBox, bar_index)
+        box.set_top(zeroThreeEightTwoBox, zeroThreeEightTwoPercentLevel)
+        box.set_bottom(zeroThreeEightTwoBox, zeroTwoThreeSixPercentLevel)
+        box.set_bgcolor(zeroThreeEightTwoBox, color.new(zeroThreeEightTwoLineColor, 80))
+else
+    if not na(zeroThreeEightTwoBox)
+        box.delete(zeroThreeEightTwoBox)
+        zeroThreeEightTwoBox := na
+
+// Draw the background for the 0.236% region
+var box zeroTwoThreeSixBox = na
+if enableBackground and enableZeroTwoThreeSixLine
+    if na(zeroTwoThreeSixBox)
+        zeroTwoThreeSixBox := box.new(left=bar_index[lookback], top=zeroTwoThreeSixPercentLevel, right=bar_index, bottom=zeroZeroZeroZeroPercentLevel, border_width=0, bgcolor=color.new(zeroTwoThreeSixLineColor, 80))
+    else
+        box.set_left(zeroTwoThreeSixBox, bar_index[lookback])
+        box.set_right(zeroTwoThreeSixBox, bar_index)
+        box.set_top(zeroTwoThreeSixBox, zeroTwoThreeSixPercentLevel)
+        box.set_bottom(zeroTwoThreeSixBox, zeroZeroZeroZeroPercentLevel)
+        box.set_bgcolor(zeroTwoThreeSixBox, color.new(zeroTwoThreeSixLineColor, 80))
+else
+    if not na(zeroTwoThreeSixBox)
+        box.delete(zeroTwoThreeSixBox)
+        zeroTwoThreeSixBox := na
+
+// Draw the background for the 0.000% region
+var box zeroZeroZeroZeroBox = na
+if enableBackground and enableZeroZeroZeroZeroLine
+    if na(zeroZeroZeroZeroBox)
+        zeroZeroZeroZeroBox := box.new(left=bar_index[lookback], top=zeroZeroZeroZeroPercentLevel, right=bar_index, bottom=minPrice, border_width=0, bgcolor=color.new(zeroZeroZeroZeroLineColor, 80))
+    else
+        box.set_left(zeroZeroZeroZeroBox, bar_index[lookback])
+        box.set_right(zeroZeroZeroZeroBox, bar_index)
+        box.set_top(zeroZeroZeroZeroBox, zeroZeroZeroZeroPercentLevel)
+        box.set_bottom(zeroZeroZeroZeroBox, minPrice)
+        box.set_bgcolor(zeroZeroZeroZeroBox, color.new(zeroZeroZeroZeroLineColor, 80))
+else
+    if not na(zeroZeroZeroZeroBox)
+        box.delete(zeroZeroZeroZeroBox)
+        zeroZeroZeroZeroBox := na
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////// DRAWING LINES
+if (bar_index >= lookback)
+
+    // Draw the ascending trendline
+    if enableAscendingTrendline
+        if na(ascendingTrendline)
+            ascendingTrendline := line.new(ascendingTrendlineStartBar, ascendingTrendlineStartPrice, ascendingTrendlineEndBar, ascendingTrendlineEndPrice, width=ascendingTrendlineWidth, color=ascendingTrendlineColor, style=ascendingTrendlineStyle)
+        else
+            line.set_xy1(ascendingTrendline, ascendingTrendlineStartBar, ascendingTrendlineStartPrice)
+            line.set_xy2(ascendingTrendline, ascendingTrendlineEndBar, ascendingTrendlineEndPrice)
+            line.set_style(ascendingTrendline, ascendingTrendlineStyle)
+    else
+        if not na(ascendingTrendline)
+            line.delete(ascendingTrendline)
+            ascendingTrendline := na
+
+    // Draw the descending trendline
+    if enableDescendingTrendline
+        if na(descendingTrendline)
+            descendingTrendline := line.new(descendingTrendlineStartBar, descendingTrendlineStartPrice, descendingTrendlineEndBar, descendingTrendlineEndPrice, width=descendingTrendlineWidth, color=descendingTrendlineColor, style=descendingTrendlineStyle)
+        else
+            line.set_xy1(descendingTrendline, descendingTrendlineStartBar, descendingTrendlineStartPrice)
+            line.set_xy2(descendingTrendline, descendingTrendlineEndBar, descendingTrendlineEndPrice)
+            line.set_style(descendingTrendline, descendingTrendlineStyle)
+    else
+        if not na(descendingTrendline)
+            line.delete(descendingTrendline)
+            descendingTrendline := na
+
+    // Handling the 2.000% level line
+    if enableTwoZeroZeroZeroLine
+        if na(twoZeroZeroZeroPercentLine)
+            twoZeroZeroZeroPercentLine := line.new(bar_index[lookback], twoZeroZeroZeroPercentLevel, bar_index - 1, twoZeroZeroZeroPercentLevel, width=twoZeroZeroZeroLineWidth, color=twoZeroZeroZeroLineColor, style=twoZeroZeroZeroLineStyle)
+        else
+            line.set_xy1(twoZeroZeroZeroPercentLine, bar_index[lookback], twoZeroZeroZeroPercentLevel)
+            line.set_xy2(twoZeroZeroZeroPercentLine, bar_index - 1, twoZeroZeroZeroPercentLevel)
+    else
+        if not na(twoZeroZeroZeroPercentLine)
+            line.delete(twoZeroZeroZeroPercentLine)
+            twoZeroZeroZeroPercentLine := na
+
+    // Handling the 1.786% level line
+    if enableOneSevenEightSixLine
+        if na(oneSevenEightSixPercentLine)
+            oneSevenEightSixPercentLine := line.new(bar_index[lookback], oneSevenEightSixPercentLevel, bar_index - 1, oneSevenEightSixPercentLevel, width=oneSevenEightSixLineWidth, color=oneSevenEightSixLineColor, style=oneSevenEightSixLineStyle)
+        else
+            line.set_xy1(oneSevenEightSixPercentLine, bar_index[lookback], oneSevenEightSixPercentLevel)
+            line.set_xy2(oneSevenEightSixPercentLine, bar_index - 1, oneSevenEightSixPercentLevel)
+    else
+        if not na(oneSevenEightSixPercentLine)
+            line.delete(oneSevenEightSixPercentLine)
+            oneSevenEightSixPercentLine := na
+
+    // Handling the 1.650% level line
+    if enableOneSixFiveZeroLine
+        if na(oneSixFiveZeroPercentLine)
+            oneSixFiveZeroPercentLine := line.new(bar_index[lookback], oneSixFiveZeroPercentLevel, bar_index - 1, oneSixFiveZeroPercentLevel, width=oneSixFiveZeroLineWidth, color=oneSixFiveZeroLineColor, style=oneSixFiveZeroLineStyle)
+        else
+            line.set_xy1(oneSixFiveZeroPercentLine, bar_index[lookback], oneSixFiveZeroPercentLevel)
+            line.set_xy2(oneSixFiveZeroPercentLine, bar_index - 1, oneSixFiveZeroPercentLevel)
+    else
+        if not na(oneSixFiveZeroPercentLine)
+            line.delete(oneSixFiveZeroPercentLine)
+            oneSixFiveZeroPercentLine := na
+
+    // Handling the 1.618% level line
+    if enableOneSixOneEightLine
+        if na(oneSixOneEightPercentLine)
+            oneSixOneEightPercentLine := line.new(bar_index[lookback], oneSixOneEightPercentLevel, bar_index - 1, oneSixOneEightPercentLevel, width=oneSixOneEightLineWidth, color=oneSixOneEightLineColor, style=oneSixOneEightLineStyle)
+        else
+            line.set_xy1(oneSixOneEightPercentLine, bar_index[lookback], oneSixOneEightPercentLevel)
+            line.set_xy2(oneSixOneEightPercentLine, bar_index - 1, oneSixOneEightPercentLevel)
+    else
+        if not na(oneSixOneEightPercentLine)
+            line.delete(oneSixOneEightPercentLine)
+            oneSixOneEightPercentLine := na
+
+    // Handling the 1.500% level line
+    if enableOneFiveZeroZeroLine
+        if na(oneFiveZeroZeroPercentLine)
+            oneFiveZeroZeroPercentLine := line.new(bar_index[lookback], oneFiveZeroZeroPercentLevel, bar_index - 1, oneFiveZeroZeroPercentLevel, width=oneFiveZeroZeroLineWidth, color=oneFiveZeroZeroLineColor, style=oneFiveZeroZeroLineStyle)
+        else
+            line.set_xy1(oneFiveZeroZeroPercentLine, bar_index[lookback], oneFiveZeroZeroPercentLevel)
+            line.set_xy2(oneFiveZeroZeroPercentLine, bar_index - 1, oneFiveZeroZeroPercentLevel)
+    else
+        if not na(oneFiveZeroZeroPercentLine)
+            line.delete(oneFiveZeroZeroPercentLine)
+            oneFiveZeroZeroPercentLine := na
+
+    // Handling the 1.382% level line
+    if enableOneThreeEightTwoLine
+        if na(oneThreeEightTwoPercentLine)
+            oneThreeEightTwoPercentLine := line.new(bar_index[lookback], oneThreeEightTwoPercentLevel, bar_index - 1, oneThreeEightTwoPercentLevel, width=oneThreeEightTwoLineWidth, color=oneThreeEightTwoLineColor, style=oneThreeEightTwoLineStyle)
+        else
+            line.set_xy1(oneThreeEightTwoPercentLine, bar_index[lookback], oneThreeEightTwoPercentLevel)
+            line.set_xy2(oneThreeEightTwoPercentLine, bar_index - 1, oneThreeEightTwoPercentLevel)
+    else
+        if not na(oneThreeEightTwoPercentLine)
+            line.delete(oneThreeEightTwoPercentLine)
+            oneThreeEightTwoPercentLine := na
+
+    // Handling the 1.236% level line
+    if enableOneTwoThreeSixLine
+        if na(oneTwoThreeSixPercentLine)
+            oneTwoThreeSixPercentLine := line.new(bar_index[lookback], oneTwoThreeSixPercentLevel, bar_index - 1, oneTwoThreeSixPercentLevel, width=oneTwoThreeSixLineWidth, color=oneTwoThreeSixLineColor, style=oneTwoThreeSixLineStyle)
+        else
+            line.set_xy1(oneTwoThreeSixPercentLine, bar_index[lookback], oneTwoThreeSixPercentLevel)
+            line.set_xy2(oneTwoThreeSixPercentLine, bar_index - 1, oneTwoThreeSixPercentLevel)
+    else
+        if not na(oneTwoThreeSixPercentLine)
+            line.delete(oneTwoThreeSixPercentLine)
+            oneTwoThreeSixPercentLine := na
+
+
+    // Handling the 1.000% level line
+    if enableOneZeroZeroZeroLine
+        if na(oneZeroZeroZeroPercentLine)
+            oneZeroZeroZeroPercentLine := line.new(bar_index[lookback], oneZeroZeroZeroPercentLevel, bar_index - 1, oneZeroZeroZeroPercentLevel, width=oneZeroZeroZeroLineWidth, color=oneZeroZeroZeroLineColor, style=oneZeroZeroZeroLineStyle)
+        else
+            line.set_xy1(oneZeroZeroZeroPercentLine, bar_index[lookback], oneZeroZeroZeroPercentLevel)
+            line.set_xy2(oneZeroZeroZeroPercentLine, bar_index - 1, oneZeroZeroZeroPercentLevel)
+    else
+        if not na(oneZeroZeroZeroPercentLine)
+            line.delete(oneZeroZeroZeroPercentLine)
+            oneZeroZeroZeroPercentLine := na
+
+    // Handling the 0.786% level line
+    if enableZeroSevenEightSixLine
+        if na(zeroSevenEightSixPercentLine)
+            zeroSevenEightSixPercentLine := line.new(bar_index[lookback], zeroSevenEightSixPercentLevel, bar_index - 1, zeroSevenEightSixPercentLevel, width=zeroSevenEightSixLineWidth, color=zeroSevenEightSixLineColor, style=zeroSevenEightSixLineStyle)
+        else
+            line.set_xy1(zeroSevenEightSixPercentLine, bar_index[lookback], zeroSevenEightSixPercentLevel)
+            line.set_xy2(zeroSevenEightSixPercentLine, bar_index - 1, zeroSevenEightSixPercentLevel)
+    else
+        if not na(zeroSevenEightSixPercentLine)
+            line.delete(zeroSevenEightSixPercentLine)
+            zeroSevenEightSixPercentLine := na
+
+    // Handling the 0.650% level line
+    if enableZeroSixFiveZeroLine
+        if na(zeroSixFiveZeroPercentLine)
+            zeroSixFiveZeroPercentLine := line.new(bar_index[lookback], zeroSixFiveZeroPercentLevel, bar_index - 1, zeroSixFiveZeroPercentLevel, width=zeroSixFiveZeroLineWidth, color=zeroSixFiveZeroLineColor, style=zeroSixFiveZeroLineStyle)
+        else
+            line.set_xy1(zeroSixFiveZeroPercentLine, bar_index[lookback], zeroSixFiveZeroPercentLevel)
+            line.set_xy2(zeroSixFiveZeroPercentLine, bar_index - 1, zeroSixFiveZeroPercentLevel)
+    else
+        if not na(zeroSixFiveZeroPercentLine)
+            line.delete(zeroSixFiveZeroPercentLine)
+            zeroSixFiveZeroPercentLine := na
+
+    // Handling the 0.618% level line
+    if enableZeroSixOneEightLine
+        if na(zeroSixOneEightPercentLine)
+            zeroSixOneEightPercentLine := line.new(bar_index[lookback], zeroSixOneEightPercentLevel, bar_index - 1, zeroSixOneEightPercentLevel, width=zeroSixOneEightLineWidth, color=zeroSixOneEightLineColor, style=zeroSixOneEightLineStyle)
+        else
+            line.set_xy1(zeroSixOneEightPercentLine, bar_index[lookback], zeroSixOneEightPercentLevel)
+            line.set_xy2(zeroSixOneEightPercentLine, bar_index - 1, zeroSixOneEightPercentLevel)
+    else
+        if not na(zeroSixOneEightPercentLine)
+            line.delete(zeroSixOneEightPercentLine)
+            zeroSixOneEightPercentLine := na
+
+    // Handling the 0.500% level line
+    if enableZeroFiveZeroZeroLine
+        if na(zeroFiveZeroZeroPercentLine)
+            zeroFiveZeroZeroPercentLine := line.new(bar_index[lookback], zeroFiveZeroZeroPercentLevel, bar_index - 1, zeroFiveZeroZeroPercentLevel, width=zeroFiveZeroZeroLineWidth, color=zeroFiveZeroZeroLineColor, style=zeroFiveZeroZeroLineStyle)
+        else
+            line.set_xy1(zeroFiveZeroZeroPercentLine, bar_index[lookback], zeroFiveZeroZeroPercentLevel)
+            line.set_xy2(zeroFiveZeroZeroPercentLine, bar_index - 1, zeroFiveZeroZeroPercentLevel)
+    else
+        if not na(zeroFiveZeroZeroPercentLine)
+            line.delete(zeroFiveZeroZeroPercentLine)
+            zeroFiveZeroZeroPercentLine := na
+
+    // Handling the 0.382% level line
+    if enableZeroThreeEightTwoLine
+        if na(zeroThreeEightTwoPercentLine)
+            zeroThreeEightTwoPercentLine := line.new(bar_index[lookback], zeroThreeEightTwoPercentLevel, bar_index - 1, zeroThreeEightTwoPercentLevel, width=zeroThreeEightTwoLineWidth, color=zeroThreeEightTwoLineColor, style=zeroThreeEightTwoLineStyle)
+        else
+            line.set_xy1(zeroThreeEightTwoPercentLine, bar_index[lookback], zeroThreeEightTwoPercentLevel)
+            line.set_xy2(zeroThreeEightTwoPercentLine, bar_index - 1, zeroThreeEightTwoPercentLevel)
+    else
+        if not na(zeroThreeEightTwoPercentLine)
+            line.delete(zeroThreeEightTwoPercentLine)
+            zeroThreeEightTwoPercentLine := na
+
+    // Handling the 0.236% level line
+    if enableZeroTwoThreeSixLine
+        if na(zeroTwoThreeSixPercentLine)
+            zeroTwoThreeSixPercentLine := line.new(bar_index[lookback], zeroTwoThreeSixPercentLevel, bar_index - 1, zeroTwoThreeSixPercentLevel, width=zeroTwoThreeSixLineWidth, color=zeroTwoThreeSixLineColor, style=zeroTwoThreeSixLineStyle)
+        else
+            line.set_xy1(zeroTwoThreeSixPercentLine, bar_index[lookback], zeroTwoThreeSixPercentLevel)
+            line.set_xy2(zeroTwoThreeSixPercentLine, bar_index - 1, zeroTwoThreeSixPercentLevel)
+    else
+        if not na(zeroTwoThreeSixPercentLine)
+            line.delete(zeroTwoThreeSixPercentLine)
+            zeroTwoThreeSixPercentLine := na
+
+    // Handling the 0.000% line
+    if enableZeroZeroZeroZeroLine
+        if na(zeroZeroZeroZeroPercentLine)
+            zeroZeroZeroZeroPercentLine := line.new(bar_index[lookback], zeroZeroZeroZeroPercentLevel, bar_index - 1, zeroZeroZeroZeroPercentLevel, width=zeroZeroZeroZeroLineWidth, color=zeroZeroZeroZeroLineColor, style=zeroZeroZeroZeroLineStyle)
+        else
+            line.set_xy1(zeroZeroZeroZeroPercentLine, bar_index[lookback], zeroZeroZeroZeroPercentLevel)
+            line.set_xy2(zeroZeroZeroZeroPercentLine, bar_index - 1, zeroZeroZeroZeroPercentLevel)
+    else
+        if not na(zeroZeroZeroZeroPercentLine)
+            line.delete(zeroZeroZeroZeroPercentLine)
+            zeroZeroZeroZeroPercentLine := na
